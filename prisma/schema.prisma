@@ -1,0 +1,686 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["typedSql"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum PropertyOwnershipType {
+  INDIVIDUAL
+  LLC
+  PARTNERSHIP
+}
+
+enum PropertyStatus {
+  OWNER_OCCUPIED
+  RENTED
+  VACANT
+  RENOVATING
+}
+
+enum MaintenanceStatus {
+  OPEN
+  RESOLVED
+}
+
+enum MaintenanceSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AssetType {
+  ROOF
+  HVAC
+  WATER_HEATER
+  APPLIANCES
+  PLUMBING
+  ELECTRICAL
+  OTHER
+}
+
+enum FinancialCategory {
+  RENT_INCOME
+  MORTGAGE
+  INSURANCE
+  MAINTENANCE
+  CAPEX
+  UTILITIES
+  HOA
+  TAXES
+  OTHER
+}
+
+enum DocumentType {
+  LEASE
+  INSURANCE
+  INSPECTION
+  MORTGAGE
+  HOA
+  WARRANTY
+  OTHER
+}
+
+enum ActorType {
+  USER
+  MCP
+  SYSTEM
+  AGENT
+}
+
+enum DraftStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+  APPLIED
+}
+
+enum TimelineEventType {
+  NOTE_ADDED
+  NOTE_UPDATED
+  MAINTENANCE_CREATED
+  MAINTENANCE_STATUS_CHANGED
+  DOCUMENT_ADDED
+  LEASE_CREATED
+  LEASE_UPDATED
+  ASSET_ADDED
+  ASSET_UPDATED
+  PROPERTY_UPDATED
+  FINANCIAL_ENTRY_ADDED
+  DRAFT_APPROVED
+  CUSTOM
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+model User {
+  id       String  @id @default(cuid())
+  email    String  @unique
+  username String  @unique
+  name     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  image                UserImage?
+  password             Password?
+  notes                Note[]
+  roles                Role[]
+  memberships          Membership[]
+  entityNotesCreated   EntityNote[]        @relation("EntityNoteCreatedBy")
+  timelineEvents       TimelineEvent[]
+  draftChangesCreated  DraftChange[]       @relation("DraftChangeCreatedBy")
+  draftChangesReviewed DraftChange[]       @relation("DraftChangeReviewedBy")
+  draftChangesProposed DraftChange[]       @relation("DraftChangeProposedBy")
+  auditLogs            AuditLog[]
+  mcpToolInvocations   McpToolInvocation[]
+  sessions             Session[]
+  connections          Connection[]
+  passkey              Passkey[]
+}
+
+model Organization {
+  id   String @id @default(cuid())
+  name String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships        Membership[]
+  properties         Property[]
+  vendors            Vendor[]
+  entityNotes        EntityNote[]
+  timelineEvents     TimelineEvent[]
+  financialEntries   FinancialEntry[]
+  draftChanges       DraftChange[]
+  auditLogs          AuditLog[]
+  mcpToolInvocations McpToolInvocation[]
+}
+
+model Membership {
+  id String @id @default(cuid())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  organizationId String
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId String
+
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  roleId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@index([roleId])
+}
+
+model Property {
+  id            String                @id @default(cuid())
+  name          String
+  address       String                @default("")
+  country       String?
+  purchaseDate  DateTime              @default(now())
+  purchasePrice Float                 @default(0)
+  ownershipType PropertyOwnershipType @default(INDIVIDUAL)
+  status        PropertyStatus        @default(OWNER_OCCUPIED)
+  notes         String?
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  organizationId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assets            Asset[]
+  documents         Document[]
+  timelineEvents    TimelineEvent[]
+  maintenanceEvents MaintenanceEvent[]
+  leases            Lease[]
+  financialEntries  FinancialEntry[]
+
+  @@index([organizationId])
+  @@index([organizationId, name])
+}
+
+model Lease {
+  id String @id @default(cuid())
+
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  propertyId String
+
+  tenantName      String    @default("")
+  leaseStartDate  DateTime  @default(now())
+  leaseEndDate    DateTime?
+  monthlyRent     Float     @default(0)
+  securityDeposit Float     @default(0)
+  paymentDueDay   Int       @default(1)
+
+  timelineEvents TimelineEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([propertyId])
+  @@index([leaseStartDate])
+}
+
+model MaintenanceEvent {
+  id String @id @default(cuid())
+
+  dateReported DateTime            @default(now())
+  severity     MaintenanceSeverity @default(MEDIUM)
+  status       MaintenanceStatus   @default(OPEN)
+  description  String
+  cost         Float?
+  imageKeys    Json?
+
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  propertyId String
+
+  asset   Asset?  @relation(fields: [assetId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  assetId String?
+
+  vendor   Vendor? @relation(fields: [vendorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  vendorId String?
+
+  financialEntries FinancialEntry[]
+  timelineEvents   TimelineEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([propertyId])
+  @@index([assetId])
+  @@index([vendorId])
+  @@index([severity])
+  @@index([status])
+}
+
+model EntityNote {
+  id             String  @id @default(cuid())
+  entityType     String
+  entityId       String
+  body           String  @default("")
+  tags           Json?
+  isDecisionNote Boolean @default(false)
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  organizationId String
+
+  createdByType ActorType @default(USER)
+  createdBy     User?     @relation("EntityNoteCreatedBy", fields: [createdById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createdById   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  timelineEvents TimelineEvent[]
+
+  @@index([organizationId])
+  @@index([entityType, entityId])
+  @@index([createdById])
+}
+
+model Asset {
+  id          String    @id @default(cuid())
+  assetType   AssetType @default(OTHER)
+  installDate DateTime?
+  brandModel  String?
+  notes       String?
+
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  propertyId String
+
+  maintenanceEvents MaintenanceEvent[]
+  documents         Document[]
+  timelineEvents    TimelineEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([propertyId])
+  @@index([propertyId, assetType])
+}
+
+model Vendor {
+  id       String  @id @default(cuid())
+  name     String
+  category String?
+  phone    String?
+  email    String?
+  website  String?
+  notes    String?
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  organizationId String
+
+  maintenanceEvents MaintenanceEvent[]
+  financialEntries  FinancialEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([organizationId, name])
+}
+
+model Document {
+  id           String       @id @default(cuid())
+  documentType DocumentType
+  date         DateTime     @default(now())
+  fileKey      String
+  aiSummary    String?
+  notes        String?
+
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  propertyId String
+
+  asset   Asset?  @relation(fields: [assetId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  assetId String?
+
+  financialEntries FinancialEntry[]
+  timelineEvents   TimelineEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([propertyId])
+  @@index([assetId])
+}
+
+model FinancialEntry {
+  id       String            @id @default(cuid())
+  category FinancialCategory @default(OTHER)
+  amount   Float
+  date     DateTime          @default(now())
+  notes    String?
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  organizationId String
+
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  propertyId String
+
+  maintenanceEvent   MaintenanceEvent? @relation(fields: [maintenanceEventId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  maintenanceEventId String?
+
+  vendor   Vendor? @relation(fields: [vendorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  vendorId String?
+
+  document   Document? @relation(fields: [documentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  documentId String?
+
+  timelineEvents TimelineEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([propertyId])
+  @@index([maintenanceEventId])
+  @@index([vendorId])
+  @@index([documentId])
+  @@index([category])
+  @@index([date])
+}
+
+model TimelineEvent {
+  id       String            @id @default(cuid())
+  type     TimelineEventType
+  message  String?
+  metadata Json?
+
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  propertyId String
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  organizationId String
+
+  maintenanceEvent   MaintenanceEvent? @relation(fields: [maintenanceEventId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  maintenanceEventId String?
+
+  document   Document? @relation(fields: [documentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  documentId String?
+
+  entityNote   EntityNote? @relation(fields: [entityNoteId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  entityNoteId String?
+
+  lease   Lease?  @relation(fields: [leaseId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  leaseId String?
+
+  asset   Asset?  @relation(fields: [assetId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  assetId String?
+
+  financialEntry   FinancialEntry? @relation(fields: [financialEntryId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  financialEntryId String?
+
+  actor         User?      @relation(fields: [actorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  actorId       String?
+  actorType     ActorType?
+  actorLabel    String?
+  actorMetadata Json?
+
+  draftChange   DraftChange? @relation(fields: [draftChangeId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  draftChangeId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([propertyId])
+  @@index([organizationId])
+  @@index([maintenanceEventId])
+  @@index([documentId])
+  @@index([entityNoteId])
+  @@index([leaseId])
+  @@index([assetId])
+  @@index([financialEntryId])
+  @@index([actorId])
+  @@index([draftChangeId])
+  @@index([type])
+}
+
+model DraftChange {
+  id               String      @id @default(cuid())
+  status           DraftStatus @default(DRAFT)
+  title            String
+  summary          String?
+  entityType       String
+  entityId         String?
+  operations       Json
+  validation       Json?
+  agentContext     Json?
+  proposedByType   ActorType?
+  proposedBy       User?       @relation("DraftChangeProposedBy", fields: [proposedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  proposedByUserId String?
+  proposedByLabel  String?
+  reasoningSummary String?
+  confidence       Float?
+  sourceTool       String?
+  sourceRunId      String?
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  organizationId String
+
+  createdBy        User?   @relation("DraftChangeCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createdByUserId  String?
+  reviewedBy       User?   @relation("DraftChangeReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  reviewedByUserId String?
+
+  timelineEvents TimelineEvent[]
+
+  createdAt  DateTime  @default(now())
+  reviewedAt DateTime?
+  appliedAt  DateTime?
+
+  @@index([organizationId])
+  @@index([createdByUserId])
+  @@index([proposedByUserId])
+  @@index([reviewedByUserId])
+  @@index([status])
+  @@index([entityType, entityId])
+  @@index([sourceTool])
+  @@index([sourceRunId])
+}
+
+model AuditLog {
+  id     String      @id @default(cuid())
+  action AuditAction
+
+  entityType String
+  entityId   String
+
+  before Json?
+  after  Json?
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  organizationId String
+
+  actor         User?      @relation(fields: [actorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  actorId       String?
+  actorType     ActorType?
+  actorLabel    String?
+  actorMetadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([actorId])
+  @@index([entityType, entityId])
+}
+
+model McpToolInvocation {
+  id            String  @id @default(cuid())
+  method        String
+  paramsHash    String?
+  resultSummary String?
+  status        String?
+  durationMs    Int?
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  organizationId String
+
+  actor         User?      @relation(fields: [actorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  actorId       String?
+  actorType     ActorType?
+  actorLabel    String?
+  actorMetadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([actorId])
+  @@index([actorType])
+  @@index([method])
+  @@index([createdAt])
+}
+
+model Note {
+  id      String @id @default(cuid())
+  title   String
+  content String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ownerId String
+
+  images NoteImage[]
+
+  // non-unique foreign key
+  @@index([ownerId])
+  // This helps our order by in the user search a LOT
+  @@index([ownerId, updatedAt])
+}
+
+model NoteImage {
+  id        String  @id @default(cuid())
+  altText   String?
+  objectKey String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  note   Note   @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  noteId String
+
+  // non-unique foreign key
+  @@index([noteId])
+}
+
+model UserImage {
+  id        String  @id @default(cuid())
+  altText   String?
+  objectKey String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId String @unique
+}
+
+model Password {
+  hash String
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId String @unique
+}
+
+model Session {
+  id             String   @id @default(cuid())
+  expirationDate DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId String
+
+  // non-unique foreign key
+  @@index([userId])
+}
+
+model Permission {
+  id          String @id @default(cuid())
+  action      String // e.g. create, read, update, delete
+  entity      String // e.g. note, user, etc.
+  access      String // e.g. own or any
+  description String @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  roles Role[]
+
+  @@unique([action, entity, access])
+}
+
+model Role {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users       User[]
+  permissions Permission[]
+  memberships Membership[]
+}
+
+model Verification {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  /// The type of verification, e.g. "email" or "phone"
+  type String
+
+  /// The thing we're trying to verify, e.g. a user's email or phone number
+  target String
+
+  /// The secret key used to generate the otp
+  secret String
+
+  /// The algorithm used to generate the otp
+  algorithm String
+
+  /// The number of digits in the otp
+  digits Int
+
+  /// The number of seconds the otp is valid for
+  period Int
+
+  /// The valid characters for the otp
+  charSet String
+
+  /// When it's safe to delete this verification
+  expiresAt DateTime?
+
+  @@unique([target, type])
+}
+
+model Connection {
+  id           String @id @default(cuid())
+  providerName String
+  providerId   String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId String
+
+  @@unique([providerName, providerId])
+}
+
+model Passkey {
+  id             String   @id
+  aaguid         String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  publicKey      Bytes
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  webauthnUserId String
+  counter        BigInt
+  deviceType     String // 'singleDevice' or 'multiDevice'
+  backedUp       Boolean
+  transports     String? // Stored as comma-separated values
+
+  @@index(userId)
+}

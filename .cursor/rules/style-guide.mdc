@@ -1,0 +1,229 @@
+---
+description: UI style guide — Obsidian-inspired design system with OKLCH colors, Tailwind CSS v4, shadcn/ui, and consistent component patterns. Apply when creating or editing any UI component, route, or style file.
+globs: app/**/*.tsx,app/**/*.css
+alwaysApply: false
+---
+
+# Style Guide — Obsidian-Inspired Design System
+
+## Design Philosophy
+
+Obsidian-inspired minimalism with subtle depth. Warm neutrals, serif page titles, uppercase section labels, tight tracking, card surfaces with soft shadows. No flashy colors — accent is used sparingly for interactive elements and indicators.
+
+## Color Tokens (OKLCH)
+
+All colors are defined as CSS custom properties in `app/styles/tailwind.css` and mapped to Tailwind via `@theme inline`. Light and dark modes are both supported.
+
+| Token | Purpose |
+|-------|---------|
+| `background` | Page background (lightest surface) |
+| `surface` | Intermediate surface between background and card |
+| `card` / `card-foreground` | Elevated content containers |
+| `sidebar` / `sidebar-foreground` | Sidebar chrome |
+| `muted` / `muted-foreground` | Subdued backgrounds and secondary text |
+| `accent` / `accent-foreground` | Interactive elements, links, indicators (blue, chroma ~0.09) |
+| `border` | Default borders |
+| `destructive` | Danger actions |
+
+Never use raw hex/rgb. Always use semantic tokens: `bg-card`, `text-muted-foreground`, `border-border/40`, `text-accent`, etc.
+
+## Shadows
+
+Three levels defined as CSS custom properties and Tailwind utilities:
+
+- `shadow-xs` — cards, inputs, buttons at rest
+- `shadow-sm` — cards on hover, elevated popovers
+- `shadow-md` — modals, heavy emphasis (use sparingly)
+
+## Typography
+
+| Font | Variable | Usage |
+|------|----------|-------|
+| DM Sans | `--font-sans` | All UI text (default body font) |
+| Source Serif 4 | `--font-serif` | Page titles (`h1`), note titles |
+| JetBrains Mono | `--font-mono` | Code, pre, kbd |
+
+### Type Scale
+
+Use the custom Tailwind text utilities, not raw `text-sm`/`text-lg`:
+
+- Page titles: `text-h3` or `text-h4` with `font-serif tracking-tight`
+- Section headers: `text-body-md font-semibold uppercase tracking-[0.2em] text-muted-foreground`
+- Body text: `text-body-sm` (1rem), `text-body-xs` (0.875rem)
+- Metadata/labels: `text-body-2xs` (0.75rem)
+- Organization labels above page titles: `text-body-2xs text-muted-foreground/70 uppercase tracking-[0.2em]`
+
+## Border Radius
+
+Base radius is `0.625rem`. Use Tailwind's `rounded-lg` for standard elements, `rounded-xl` for cards, `rounded-full` for pills/badges/avatars.
+
+## Layout
+
+- Sidebar width: `--sidebar-width: 260px` (collapses to `w-12`)
+- Reading column: `--reading-column: 860px`, centered with `mx-auto`
+- Content padding: `px-5 py-8 md:px-8`
+
+---
+
+## Component Patterns
+
+### Page Header
+
+```tsx
+<header className="mb-8">
+  <p className="text-body-2xs text-muted-foreground/70 mb-2 uppercase tracking-[0.2em]">
+    {organizationName}
+  </p>
+  <h1 className="text-h4 font-serif tracking-tight">Page Title</h1>
+  {/* Optional action pills */}
+  <div className="mt-3 flex flex-wrap gap-2">
+    <Link className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-body-2xs text-accent hover:bg-accent/15">
+      + Action
+    </Link>
+  </div>
+  {/* Gradient divider */}
+  <div className="mt-6 h-px bg-linear-to-r from-border/60 via-border/30 to-transparent" />
+</header>
+```
+
+### Section Header
+
+```tsx
+<div className="mb-6 flex items-center gap-2 border-b border-border/40 pb-2">
+  <span className="h-4 w-[3px] rounded-full bg-accent" />
+  <h2 className="text-body-md font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+    Section Title
+  </h2>
+</div>
+```
+
+### Card / List Item
+
+```tsx
+<div className="rounded-xl border border-border/40 bg-card p-4 shadow-xs hover:shadow-sm hover:border-border/60">
+  {/* content */}
+</div>
+```
+
+For clickable cards, use `<Link>` with the same classes. Add an avatar initial when appropriate:
+
+```tsx
+<span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-[11px] font-bold text-accent">
+  {name[0]?.toUpperCase()}
+</span>
+```
+
+### Stat Card
+
+```tsx
+<div className="rounded-xl border border-border/40 bg-card p-4 shadow-xs">
+  <p className="text-body-2xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/60 mb-1">
+    Label
+  </p>
+  <p className="text-body-lg font-semibold text-foreground tabular-nums">
+    $1,234.56
+  </p>
+</div>
+```
+
+For the "Net" or primary stat, add `border-t-2 border-t-accent/40`.
+
+### Empty State
+
+Use `<EmptyState>` from `app/components/empty-state.tsx`:
+
+```tsx
+<EmptyState
+  icon="file-text"
+  title="No notes yet"
+  description="Capture notes on a property to build your memory timeline."
+  actionLabel="+ Add note"
+  actionTo="/path/to/new"
+/>
+```
+
+Or inline: `rounded-xl border border-dashed border-border/60 p-8 text-center`
+
+### Form Containers
+
+```tsx
+<Form className="rounded-xl border border-border/30 bg-card p-5 shadow-xs space-y-4">
+```
+
+### Inputs & Selects
+
+```
+border border-border/40 bg-card rounded-lg px-3.5 py-2.5 text-sm shadow-xs
+focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40
+```
+
+### Action Pill Link
+
+Primary (accent): `rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-body-2xs text-accent hover:bg-accent/15`
+
+Secondary (neutral): `rounded-full border border-border/60 bg-card px-3 py-1 text-body-2xs text-muted-foreground hover:border-accent/40 hover:text-foreground`
+
+### Status Badge
+
+```tsx
+<span className="rounded-full bg-muted px-2 py-0.5 text-body-2xs font-medium uppercase text-muted-foreground">
+  {status}
+</span>
+```
+
+### Tag
+
+```tsx
+<span className="text-body-2xs text-accent/80 bg-accent/10 rounded-full px-2 py-0.5">
+  #{tagName}
+</span>
+```
+
+### Backlinks (Obsidian-style)
+
+Always render as `[[Entity Name]]` with `text-accent`:
+
+```tsx
+<p className="text-body-xs text-accent">[[{entityName}]]</p>
+```
+
+---
+
+## Sidebar Patterns
+
+- Active nav item: `bg-accent/10 text-foreground` with a `before:` pseudo-element left bar (`before:h-4 before:w-[3px] before:rounded-full before:bg-accent`)
+- Hover: `hover:bg-foreground/4 hover:text-foreground`
+- Org avatar: `flex size-7 items-center justify-center rounded-full bg-accent/15 text-[11px] font-bold text-accent`
+- Section labels: `text-[10px] font-semibold tracking-[0.22em] uppercase text-muted-foreground/60`
+- Expanded tree border: `border-accent/20`
+
+## Button Variants
+
+Buttons use CVA via `app/components/ui/button.tsx`. All buttons have `active:scale-[0.98]` and `rounded-lg`.
+
+| Variant | Classes |
+|---------|---------|
+| `default` | `bg-primary text-primary-foreground shadow-xs hover:bg-primary/80` |
+| `destructive` | `bg-destructive text-destructive-foreground shadow-xs` |
+| `outline` | `border bg-background shadow-xs hover:bg-accent` |
+| `secondary` | `bg-secondary text-secondary-foreground` |
+| `ghost` | `hover:bg-accent/10` |
+| `link` | `text-primary underline-offset-4 hover:underline` |
+
+## Timeline Dots
+
+Color-code by entry type:
+
+| Type | Dot color |
+|------|-----------|
+| maintenance | `bg-amber-500` |
+| note | `bg-accent` |
+| lease | `bg-emerald-500` |
+| finance | `bg-violet-500` |
+| fallback | `bg-foreground/30` |
+
+Dots use `size-2.5 rounded-full ring-2 ring-background`.
+
+## Global Transitions
+
+All interactive elements (`a`, `button`, `select`, `input`, `textarea`) have a base 150ms transition on color, background, border, box-shadow, opacity, and transform. Do not add redundant `transition-colors` classes.
