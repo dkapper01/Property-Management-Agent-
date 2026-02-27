@@ -3,12 +3,12 @@ import { data, Form, Link } from 'react-router'
 import { EmptyState } from '#app/components/empty-state.tsx'
 import { MarkdownPreview } from '#app/components/markdown.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
-import { cn } from '#app/utils/misc.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import {
 	assertMembershipPermission,
 	requireMembership,
 } from '#app/utils/membership.server.ts'
+import { cn } from '#app/utils/misc.tsx'
 import {
 	getPropertyTimeline,
 	type TimelineEntryType,
@@ -184,17 +184,19 @@ export default function PropertyDetail({ loaderData }: Route.ComponentProps) {
 	)
 
 	const propertyBase = `/orgs/${loaderData.organizationId}/properties/${property.id}`
+	const timelineEntries = loaderData.timeline
+	const maintenanceDrafts = loaderData.maintenanceDrafts
 
 	const timelineBuckets = useMemo(() => {
 		const buckets = {
-			note: [] as typeof loaderData.timeline,
-			maintenance: [] as typeof loaderData.timeline,
-			asset: [] as typeof loaderData.timeline,
-			lease: [] as typeof loaderData.timeline,
-			document: [] as typeof loaderData.timeline,
-			finance: [] as typeof loaderData.timeline,
+			note: [] as typeof timelineEntries,
+			maintenance: [] as typeof timelineEntries,
+			asset: [] as typeof timelineEntries,
+			lease: [] as typeof timelineEntries,
+			document: [] as typeof timelineEntries,
+			finance: [] as typeof timelineEntries,
 		}
-		for (const entry of loaderData.timeline) {
+		for (const entry of timelineEntries) {
 			if (entry.type === 'note') buckets.note.push(entry)
 			if (entry.type === 'maintenance') buckets.maintenance.push(entry)
 			if (entry.type === 'asset') buckets.asset.push(entry)
@@ -203,19 +205,19 @@ export default function PropertyDetail({ loaderData }: Route.ComponentProps) {
 			if (entry.type === 'finance') buckets.finance.push(entry)
 		}
 		return buckets
-	}, [loaderData.timeline])
+	}, [timelineEntries])
 
 	const maintenanceDraftsById = useMemo(() => {
 		const byId: Record<
 			string,
-			(typeof loaderData.maintenanceDrafts)[number]
+			(typeof maintenanceDrafts)[number]
 		> = {}
-		for (const draft of loaderData.maintenanceDrafts) {
+		for (const draft of maintenanceDrafts) {
 			if (!draft.entityId) continue
 			if (!byId[draft.entityId]) byId[draft.entityId] = draft
 		}
 		return byId
-	}, [loaderData.maintenanceDrafts])
+	}, [maintenanceDrafts])
 
 	const stats = [
 		{ label: 'Assets', value: property._count.assets, color: 'bg-accent' },

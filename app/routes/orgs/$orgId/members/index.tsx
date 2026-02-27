@@ -4,6 +4,7 @@ import * as E from '@react-email/components'
 import { Form, Link } from 'react-router'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
+import { prepareVerification } from '#app/routes/_auth/verify.server.ts'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { sendEmail } from '#app/utils/email.server.ts'
@@ -13,7 +14,6 @@ import {
 } from '#app/utils/membership.server.ts'
 import { useIsPending } from '#app/utils/misc.tsx'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
-import { prepareVerification } from '#app/routes/_auth/verify.server.ts'
 import { type Route } from './+types/index.ts'
 
 export const handle: SEOHandle = {

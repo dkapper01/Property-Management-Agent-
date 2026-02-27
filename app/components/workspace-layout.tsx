@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useLocation } from 'react-router'
-import { WorkspaceSidebar } from './workspace-sidebar.tsx'
 import { type Theme } from '#app/utils/theme.server.ts'
+import { WorkspaceSidebar } from './workspace-sidebar.tsx'
 
 type WorkspaceProperty = {
 	id: string

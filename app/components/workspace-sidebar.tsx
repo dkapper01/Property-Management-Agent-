@@ -1,18 +1,16 @@
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Form, Link, NavLink, useLocation } from 'react-router'
+import { ThemeSwitch } from '#app/routes/resources/theme-switch.tsx'
 import { cn } from '#app/utils/misc.tsx'
-import { Icon } from './ui/icon.tsx'
+import { type Theme } from '#app/utils/theme.server.ts'
 import {
 	DropdownMenu,
-	DropdownMenuTrigger,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
+	DropdownMenuTrigger,
 } from './ui/dropdown-menu.tsx'
-import {
-	ThemeSwitch,
-} from '#app/routes/resources/theme-switch.tsx'
-import { type Theme } from '#app/utils/theme.server.ts'
+import { Icon } from './ui/icon.tsx'
 
 type SidebarProperty = {
 	id: string

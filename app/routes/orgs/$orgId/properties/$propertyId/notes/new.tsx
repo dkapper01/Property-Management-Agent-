@@ -77,7 +77,7 @@ export async function action({ params, request }: Route.ActionArgs) {
 		)
 	}
 
-	const note = await prisma.$transaction(async (tx) => {
+	await prisma.$transaction(async (tx) => {
 		const note = await tx.entityNote.create({
 			data: {
 				entityType: 'property',

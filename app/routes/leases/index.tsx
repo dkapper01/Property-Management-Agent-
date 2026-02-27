@@ -1,5 +1,4 @@
 import { Link } from 'react-router'
-import { type Route } from './+types/index.ts'
 
 export async function loader() {
 	return null

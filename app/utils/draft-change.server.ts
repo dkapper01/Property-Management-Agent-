@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient, type ActorType } from '@prisma/client'
+import { type ActorType, type Prisma, type PrismaClient } from '@prisma/client'
 import { z } from 'zod'
 import { writeAuditLog } from '#app/utils/audit.server.ts'
 import { prisma } from '#app/utils/db.server.ts'

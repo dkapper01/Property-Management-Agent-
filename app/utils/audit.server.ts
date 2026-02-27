@@ -2,7 +2,7 @@ import {
 	Prisma,
 	type ActorType,
 	type AuditAction,
-	PrismaClient,
+	type PrismaClient,
 } from '@prisma/client'
 import { prisma } from './db.server.ts'
 
