@@ -1,135 +1,86 @@
-# Property Management Agent
+# Property Owner Second Brain
 
-A property management system for small portfolios (1–20 units) with AI agent integration via the Model Context Protocol (MCP). Track properties, maintenance, leases, finances, and documents in a unified timeline — and let AI agents propose changes through a human-in-the-loop approval workflow.
+An AI‑native property memory system for small property owners (1–20 units). This is **not** a traditional property management suite. The web app is intentionally minimal and text‑forward; the primary interaction surface is MCP clients (ChatGPT, Claude, etc.) that ingest unstructured inputs and propose structured updates for human approval.
 
-## Features
+## Product Intent
+- Timeline‑first memory for each property
+- Markdown‑native notes with tags and backlinks
+- Human‑approved DraftChanges (AI can propose, never mutate)
+- Full audit history for every mutation
+- Calm, Obsidian‑like UI: minimal forms, no dashboards
 
-- **Property Portfolio** — Manage properties with purchase history, ownership type (Individual / LLC / Partnership), and status tracking (Owner-Occupied / Rented / Vacant / Renovating).
-- **Maintenance Tracking** — Log maintenance events with severity levels, cost tracking, and linked assets and vendors.
-- **Lease Management** — Track tenants, rent amounts, security deposits, and lease terms.
-- **Financial Entries** — Record income, expenses, mortgage payments, insurance, taxes, and more across your portfolio.
-- **Asset Inventory** — Catalog roofs, HVAC systems, water heaters, appliances, and other assets with install dates and warranty info.
-- **Document Storage** — Upload and organize leases, inspections, insurance policies, and warranties with AI-generated summaries.
-- **Vendor Directory** — Maintain a list of contractors and service providers with contact info and categories.
-- **Unified Timeline** — View all property-related events chronologically in one feed.
-- **AI Agent Integration** — External AI systems can read data and propose changes through 30+ MCP tools, with drafts requiring human approval before being applied.
-- **Audit Logging** — Full audit trail of all changes with before/after state snapshots.
-- **Role-Based Access** — Support for owner, manager, agent, and ai-agent roles with granular permissions.
-- **Authentication** — Email/password, GitHub OAuth, passkeys (WebAuthn), and two-factor authentication.
+### Non‑Goals (V1)
+- Accounting platform
+- Workflow automation or queues
+- Vendor marketplace
+- Complex tenant CRM
+- Predictive scoring or automation
+
+## Core Concepts
+- **DraftChange**: AI proposes structured changes; humans approve.
+- **TimelineEvent**: Every meaningful change becomes a timeline entry.
+- **AuditLog**: Immutable history of every mutation.
+- **EntityNote**: Markdown narrative layer for decisions and context.
 
 ## Tech Stack
+- React Router v7
+- Prisma ORM
+- SQLite (dev and Fly via LiteFS)
+- Tailwind CSS
+- MCP JSON‑RPC tool layer
 
-| Layer       | Technology                                    |
-| ----------- | --------------------------------------------- |
-| Framework   | React Router v7 (SSR)                         |
-| UI          | React 19, Tailwind CSS v4, Radix UI           |
-| Language    | TypeScript                                    |
-| Server      | Express.js, Node.js 22+                       |
-| Database    | SQLite via Prisma ORM                          |
-| Auth        | Remix Auth, SimpleWebAuthn, bcrypt            |
-| Validation  | Zod, Conform                                  |
-| AI/Agent    | MCP (Model Context Protocol), JSON-RPC 2.0   |
-| Storage     | Tigris / S3-compatible object storage          |
-| Monitoring  | Sentry                                        |
-| Testing     | Vitest, Playwright, Testing Library           |
-| Build       | Vite                                          |
+## Data Model (V1)
+Entities: Workspace (Organization), Property, Lease, Asset, MaintenanceEvent, FinancialEntry, Document, EntityNote, DraftChange, TimelineEvent, AuditLog.
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js 22+
-- npm
-
-### Installation
-
-```sh
+## Local Development
+1. Install deps:
+```bash
 npm install
 ```
 
-### Environment Variables
-
-Copy the example env file and fill in your values:
-
-```sh
-cp .env.example .env
-```
-
-Key variables:
-
-| Variable                  | Description                              |
-| ------------------------- | ---------------------------------------- |
-| `DATABASE_URL`            | SQLite connection string                 |
-| `SESSION_SECRET`          | Secret for session encryption            |
-| `RESEND_API_KEY`          | API key for transactional email (Resend) |
-| `GITHUB_CLIENT_ID`        | GitHub OAuth app client ID               |
-| `GITHUB_CLIENT_SECRET`    | GitHub OAuth app client secret           |
-| `MCP_DEV_TOKEN`           | Optional token for MCP auth without a browser session |
-| `AWS_ACCESS_KEY_ID`       | Object storage access key                |
-| `AWS_SECRET_ACCESS_KEY`   | Object storage secret key                |
-| `AWS_ENDPOINT_URL_S3`     | S3-compatible endpoint URL               |
-| `BUCKET_NAME`             | Storage bucket name                      |
-
-### Setup
-
-Build the app, run database migrations, and install Playwright browsers:
-
-```sh
-npm run setup
-```
-
-### Seed the Database
-
-```sh
-npx prisma db seed
-```
-
-This creates sample data including properties, maintenance events, leases, financial entries, and users with different roles.
-
-### Development
-
-Start the dev server with mocks enabled:
-
-```sh
+2. Run dev server (with mocks):
+```bash
 npm run dev
 ```
 
-Or without mocks:
-
-```sh
-npm run dev:no-mocks
+3. Seed data:
+```bash
+npx prisma db seed
 ```
 
-### Production
+## MCP Smoke Test
+```bash
+MCP_DEV_TOKEN=... MCP_USER_ID=... npm run mcp:smoke
+```
 
-```sh
+## Draft Approval Flow (What happens on approve)
+1. Draft operations are validated and applied in a transaction.
+2. Each mutation writes an AuditLog.
+3. Each mutation emits a TimelineEvent.
+4. Draft status becomes `APPLIED`.
+
+## Useful Commands
+```bash
+npm run dev
+npm run dev:no-mocks
 npm run build
 npm run start
+npm run test
+npm run test:e2e:run
+npm run typecheck
 ```
 
-## MCP Integration
+## Environment Variables (dev)
+See `.env.example` for required variables.
 
-The app exposes an MCP endpoint at `/resources/mcp` that accepts JSON-RPC 2.0 requests. AI agents can use 30+ tools to read property data and propose changes through the draft system.
+## Deploy (Fly.io)
+See `docs/deployment.md` for the full Fly.io production + staging checklist.
 
-**Read tools** — `property_list`, `property_get`, `maintenance_list`, `timeline_list`, and more.
+## Repository Structure (high‑level)
+- `app/` – UI, routes, loaders/actions
+- `prisma/` – schema + seed
+- `app/utils/` – data access, audit, timeline, MCP server
+- `docs/` – product and technical docs
 
-**Write tools** — `draft_create_maintenance`, `draft_create_note`, `draft_create_financial_entry`, etc. All writes go through the draft approval workflow.
-
-Agents are assigned the `ai-agent` role with read access and limited create permissions. They cannot directly modify data — all proposed changes must be reviewed and approved by a human.
-
-Authenticate MCP requests with either a browser session cookie or the `MCP_DEV_TOKEN` environment variable.
-
-## Scripts
-
-| Script              | Description                                |
-| ------------------- | ------------------------------------------ |
-| `npm run dev`       | Start dev server with mocks                |
-| `npm run build`     | Production build                           |
-| `npm run start`     | Start production server                    |
-| `npm run setup`     | Build + migrate + generate Prisma + install Playwright |
-| `npm run test`      | Run unit tests (Vitest)                    |
-| `npm run test:e2e`  | Run E2E tests (Playwright UI)              |
-| `npm run lint`      | Lint with ESLint                           |
-| `npm run typecheck` | Type-check with TypeScript                 |
-| `npm run format`    | Format with Prettier                       |
-| `npm run validate`  | Run tests, lint, typecheck, and E2E in parallel |
+---
+If you’re evaluating scope alignment, this project is intentionally narrow: **memory, timeline, and audited AI proposals** — not workflow software.
