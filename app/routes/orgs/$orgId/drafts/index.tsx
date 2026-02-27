@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { data, Form, Link } from 'react-router'
 import { z } from 'zod'
 import { cn } from '#app/utils/misc.tsx'
+import { EmptyState } from '#app/components/empty-state.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
 import {
 	applyDraftChange,
@@ -193,21 +194,25 @@ export default function DraftsIndex({ loaderData }: Route.ComponentProps) {
 
 	return (
 		<article className="mx-auto max-w-(--reading-column) px-5 py-8 md:px-8">
-			<header className="mb-6">
+			<header className="mb-8">
+				<p className="text-body-2xs text-muted-foreground/70 mb-2 uppercase tracking-[0.2em]">
+					{loaderData.organization.name}
+				</p>
 				<h1 className="text-h4 font-serif tracking-tight">AI Agent</h1>
-				<p className="text-body-2xs text-muted-foreground">
+				<p className="mt-1 text-body-xs text-muted-foreground">
 					Review AI or collaborator proposals before they land in the
 					timeline.
 				</p>
+				<div className="mt-6 h-px bg-linear-to-r from-border/60 via-border/30 to-transparent" />
 			</header>
 
 			<McpCallout />
 
-			<Form method="get" className="mb-10 flex flex-wrap gap-3">
+			<Form method="get" className="mb-8 flex flex-wrap gap-2 rounded-xl border border-border/30 bg-surface p-3">
 				<select
 					name="status"
 					defaultValue={loaderData.filters.status ?? ''}
-					className="rounded-md border border-border/40 bg-background/60 px-3 py-2 text-sm"
+					className="rounded-lg border border-border/40 bg-background px-3 py-2 text-body-xs shadow-xs focus:border-accent/40 focus:outline-none focus:ring-2 focus:ring-accent/30"
 				>
 					<option value="">All statuses</option>
 					<option value="DRAFT">Draft</option>
@@ -220,21 +225,21 @@ export default function DraftsIndex({ loaderData }: Route.ComponentProps) {
 					name="q"
 					defaultValue={loaderData.filters.query ?? ''}
 					placeholder="Search drafts"
-					className="w-full max-w-sm rounded-md border border-border/40 bg-background/60 px-3 py-2 text-sm"
+					className="w-full max-w-sm rounded-lg border border-border/40 bg-background px-3 py-2 text-body-xs shadow-xs focus:border-accent/40 focus:outline-none focus:ring-2 focus:ring-accent/30"
 				/>
 				<StatusButton type="submit" size="sm" status="idle">
 					Filter
 				</StatusButton>
 				<Link
 					to={`/orgs/${loaderData.organization.id}/drafts`}
-					className="inline-flex items-center justify-center rounded-md border border-border/40 bg-background/60 px-3 py-2 text-sm font-medium hover:bg-muted/40"
+					className="inline-flex items-center justify-center rounded-lg border border-border/40 bg-background px-3 py-2 text-body-xs font-medium shadow-xs hover:bg-muted/40"
 				>
 					Clear
 				</Link>
 			</Form>
 
 			{loaderData.entries.length ? (
-				<ul className="divide-y divide-border/40">
+				<ul className="space-y-3">
 					{loaderData.entries.map((draft) => {
 						const proposedBy =
 							draft.proposedByLabel ??
@@ -244,12 +249,9 @@ export default function DraftsIndex({ loaderData }: Route.ComponentProps) {
 							'Unknown'
 
 						return (
-							<li key={draft.id} className="py-6 first:pt-0">
+							<li key={draft.id} className="rounded-xl border border-border/40 bg-card px-5 py-4 shadow-xs">
 								<div className="flex flex-wrap items-start justify-between gap-4">
-									<div className="grid gap-1">
-										<span className={cn('inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.15em]', draftStatusStyle[draft.status] ?? 'bg-muted text-muted-foreground')}>
-											{draft.status}
-										</span>
+									<div className="grid gap-1.5">
 										<h2 className="text-body-sm font-medium">
 											<Link
 												to={`/orgs/${loaderData.organization.id}/drafts/${draft.id}`}
@@ -259,11 +261,11 @@ export default function DraftsIndex({ loaderData }: Route.ComponentProps) {
 											</Link>
 										</h2>
 										{draft.summary ? (
-											<p className="text-body-xs text-muted-foreground">
+											<p className="text-body-xs leading-relaxed text-muted-foreground">
 												{draft.summary}
 											</p>
 										) : null}
-										<p className="text-body-xs text-muted-foreground">
+										<p className="text-body-2xs text-muted-foreground">
 											{draft.operationCount} operations ·{' '}
 											{draft.operationTypes.length ? (
 												<>
@@ -277,42 +279,33 @@ export default function DraftsIndex({ loaderData }: Route.ComponentProps) {
 											) : (
 												'Uncategorized'
 											)}
-										</p>
-										<p className="text-body-xs text-muted-foreground">
+											<span className="mx-1 text-border">·</span>
 											Proposed by {proposedBy}
 										</p>
 									</div>
-									<div className="text-right text-body-xs text-muted-foreground">
-										<p>
-											Created{' '}
+									<div className="flex flex-col items-end gap-1.5">
+										<span className={cn('inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.15em]', draftStatusStyle[draft.status] ?? 'bg-muted text-muted-foreground')}>
+											{draft.status}
+										</span>
+										<p className="text-body-2xs text-muted-foreground">
 											{new Intl.DateTimeFormat('en-US', {
 												dateStyle: 'medium',
-												timeStyle: 'short',
 											}).format(draft.createdAt)}
 										</p>
-										{draft.appliedAt ? (
-											<p>
-												Applied{' '}
-												{new Intl.DateTimeFormat('en-US', {
-													dateStyle: 'medium',
-													timeStyle: 'short',
-												}).format(draft.appliedAt)}
-											</p>
-										) : null}
 									</div>
 								</div>
 
-								<details className="mt-4 rounded-xl border border-border/40 bg-muted/20 px-4 py-3">
+								<details className="mt-4 rounded-lg border border-border/30 bg-muted/10 px-4 py-3">
 									<summary className="cursor-pointer text-body-2xs font-semibold text-muted-foreground">
 										View operations
 									</summary>
-									<pre className="mt-3 max-h-80 overflow-auto rounded-lg bg-background px-3 py-2 text-body-2xs text-muted-foreground">
+									<pre className="mt-3 max-h-80 overflow-auto rounded-lg border border-border/30 bg-background px-4 py-3 text-body-2xs leading-relaxed text-muted-foreground">
 										{JSON.stringify(draft.operations, null, 2)}
 									</pre>
 								</details>
 
 								{draft.status === 'DRAFT' && canReview ? (
-									<div className="mt-4 flex flex-wrap items-center gap-3">
+									<div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border/30 pt-4">
 										<Form method="post">
 											<input
 												type="hidden"
@@ -329,6 +322,7 @@ export default function DraftsIndex({ loaderData }: Route.ComponentProps) {
 												size="sm"
 												status={isPending ? 'pending' : 'idle'}
 												disabled={isPending}
+												className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
 											>
 												Approve & apply
 											</StatusButton>
@@ -347,7 +341,7 @@ export default function DraftsIndex({ loaderData }: Route.ComponentProps) {
 											<input
 												name="reason"
 												placeholder="Reject reason (optional)"
-												className="rounded-md border border-border/40 bg-background/60 px-3 py-2 text-sm"
+												className="rounded-lg border border-border/40 bg-background px-3 py-2 text-body-xs shadow-xs focus:border-accent/40 focus:outline-none focus:ring-2 focus:ring-accent/30"
 											/>
 											<StatusButton
 												type="submit"
@@ -366,14 +360,11 @@ export default function DraftsIndex({ loaderData }: Route.ComponentProps) {
 					})}
 				</ul>
 			) : (
-				<div className="rounded-xl border border-dashed border-border/60 p-6 text-body-sm text-muted-foreground">
-					<p className="font-semibold text-foreground">
-						No drafts match your filters
-					</p>
-					<p className="mt-1">
-						New AI proposals will appear here for review.
-					</p>
-				</div>
+				<EmptyState
+					icon="pencil-1"
+					title="No drafts match your filters"
+					description="New AI proposals will appear here for review. Connect your MCP server to get started."
+				/>
 			)}
 		</article>
 	)

@@ -133,7 +133,7 @@ function renderInline(content: string) {
 				return (
 					<code
 						key={index}
-						className="bg-muted/50 rounded px-1 py-0.5 font-mono text-[0.85em]"
+						className="rounded border border-border/20 bg-muted/50 px-1.5 py-0.5 font-mono text-[0.8em]"
 					>
 						{token.value}
 					</code>
@@ -313,7 +313,7 @@ export function MarkdownPreview({
 					return (
 						<blockquote
 							key={index}
-							className="border-l-2 border-accent/20 bg-accent/[0.03] rounded-r-lg px-4 py-3 text-body-sm leading-[1.7] text-muted-foreground"
+							className="border-l-2 border-accent/20 bg-accent/3 rounded-r-lg px-4 py-3 text-body-sm leading-[1.7] text-muted-foreground"
 						>
 							{renderInline(block.content.join(' '))}
 						</blockquote>

@@ -358,7 +358,7 @@ export function WorkspaceSidebar({
 			</div>
 			<div className="mx-4 h-px bg-linear-to-r from-border/60 via-border/30 to-transparent" />
 
-			<nav className="flex-1 overflow-y-auto px-2 py-3">
+			<nav className="flex-1 overflow-y-auto scroll-smooth px-2 py-3">
 				{activeOrgId ? (
 					<>
 						{/* Properties section with search */}
@@ -427,7 +427,7 @@ export function WorkspaceSidebar({
 														end
 														className={({ isActive }) =>
 															cn(
-																'flex flex-1 items-center gap-1.5 truncate rounded-md px-1.5 py-0.5 text-[12px] font-medium transition-colors',
+																'flex flex-1 items-center gap-1.5 truncate rounded-md px-1.5 py-0.5 text-[13px] font-medium transition-colors',
 																isActive || isPropertyActive
 																	? 'text-foreground'
 																	: 'text-muted-foreground hover:text-foreground',
@@ -441,7 +441,7 @@ export function WorkspaceSidebar({
 													</NavLink>
 												</div>
 												{isExpanded ? (
-													<div className="border-accent/20 ml-4 space-y-0.5 border-l pl-2 pt-0.5">
+													<div className="border-accent/20 ml-4 space-y-1 border-l pl-2 pt-0.5">
 														{PROPERTY_SECTIONS.map((section) => {
 															const href = `${propertyUrl}#${section.id}`
 															const isSectionActive =
