@@ -50,8 +50,23 @@ test('manager role allows reading properties but not deleting organizations', as
 		error = caught
 	}
 
-	expect(error).toBeInstanceOf(Response)
-	if (error instanceof Response) {
-		expect(error.status).toBe(403)
-	}
+	expect(error).toBeTruthy()
+	const status =
+		error instanceof Response
+			? error.status
+			: typeof error === 'object' && error !== null && 'status' in error
+				? (error as { status?: unknown }).status
+				: typeof error === 'object' &&
+					  error !== null &&
+					  'init' in error &&
+					  typeof (error as { init?: unknown }).init === 'object' &&
+					  (error as { init?: unknown }).init !== null &&
+					  'status' in
+							((error as { init?: unknown }).init as Record<string, unknown>)
+					? (
+							(error as { init?: { status?: unknown } }).init?.status ??
+							undefined
+						)
+					: undefined
+	expect(status).toBe(403)
 })

@@ -1082,6 +1082,59 @@ async function assertMaintenanceInProperty({
 	return maintenance
 }
 
+async function assertNoteEntityInOrg({
+	organizationId,
+	entityType,
+	entityId,
+}: {
+	organizationId: string
+	entityType: z.infer<typeof DraftNoteDataSchema>['entityType']
+	entityId: string
+}) {
+	switch (entityType) {
+		case 'property': {
+			const property = await prisma.property.findFirst({
+				where: { id: entityId, organizationId },
+				select: { id: true },
+			})
+			if (!property) invalidParams('Property not found', { entityId })
+			return
+		}
+		case 'asset': {
+			const asset = await prisma.asset.findFirst({
+				where: { id: entityId, property: { organizationId } },
+				select: { id: true },
+			})
+			if (!asset) invalidParams('Asset not found', { entityId })
+			return
+		}
+		case 'maintenance-event': {
+			const maintenance = await prisma.maintenanceEvent.findFirst({
+				where: { id: entityId, property: { organizationId } },
+				select: { id: true },
+			})
+			if (!maintenance) invalidParams('Maintenance event not found', { entityId })
+			return
+		}
+		case 'document': {
+			const document = await prisma.document.findFirst({
+				where: { id: entityId, property: { organizationId } },
+				select: { id: true },
+			})
+			if (!document) invalidParams('Document not found', { entityId })
+			return
+		}
+		case 'lease': {
+			const lease = await prisma.lease.findFirst({
+				where: { id: entityId, property: { organizationId } },
+				select: { id: true },
+			})
+			if (!lease) invalidParams('Lease not found', { entityId })
+			return
+		}
+	}
+}
+
 const handlers: Record<
 	string,
 	(context: HandlerContext) => Promise<unknown>
@@ -1599,6 +1652,11 @@ const handlers: Record<
 		const membership = await requireMembershipForUser(parsed.organizationId, userId)
 		assertDraftCreatePermission(membership)
 		assertMembershipPermission(membership, 'create:entity-note:any')
+		await assertNoteEntityInOrg({
+			organizationId: parsed.organizationId,
+			entityType: parsed.data.entityType,
+			entityId: parsed.data.entityId,
+		})
 
 		const draft = await prisma.draftChange.create({
 			data: {

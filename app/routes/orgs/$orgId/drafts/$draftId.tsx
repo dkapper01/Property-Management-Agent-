@@ -72,12 +72,13 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 	if (!draft) {
 		throw new Response('Draft not found', { status: 404 })
 	}
+	const currentDraft = draft
 
-	const operations = z.array(DraftOperationSchema).parse(draft.operations)
+	const operations = z.array(DraftOperationSchema).parse(currentDraft.operations)
 
 	async function resolveTimelinePropertyId() {
-		if (draft.entityId && draft.entityType === 'property') {
-			return draft.entityId
+		if (currentDraft.entityId && currentDraft.entityType === 'property') {
+			return currentDraft.entityId
 		}
 
 		for (const operation of operations) {
@@ -136,7 +137,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 		where: {
 			organizationId,
 			entityType: 'draft-change',
-			entityId: draft.id,
+			entityId: currentDraft.id,
 		},
 		select: {
 			id: true,
@@ -159,7 +160,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 	return {
 		organizationId,
 		membership,
-		draft,
+		draft: currentDraft,
 		operations,
 		timelinePropertyId: await resolveTimelinePropertyId(),
 		history,

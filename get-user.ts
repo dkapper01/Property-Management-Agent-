@@ -9,4 +9,4 @@ async function run() {
   console.log(user)
 }
 
-run().finally(() => prisma.$disconnect())
+void run().finally(() => prisma.$disconnect())

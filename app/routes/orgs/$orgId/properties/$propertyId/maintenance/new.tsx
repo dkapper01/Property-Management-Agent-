@@ -223,8 +223,12 @@ export async function action({ params, request }: Route.ActionArgs) {
 	if (imageFiles.length) {
 		const imageKeys: string[] = []
 		for (const file of imageFiles) {
-			const upload = await uploadMaintenanceImage(file)
-			imageKeys.push(upload.objectKey)
+			const objectKey = await uploadMaintenanceImage({
+				organizationId,
+				requestId: record.id,
+				file,
+			})
+			imageKeys.push(objectKey)
 		}
 
 		await prisma.maintenanceEvent.update({

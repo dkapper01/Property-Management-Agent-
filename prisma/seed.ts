@@ -1,6 +1,6 @@
-import { faker } from '@faker-js/faker'
+import { Prisma } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 import { prisma } from '#app/utils/db.server.ts'
-import { createPassword, createUser } from '#tests/db-utils.ts'
 
 const propertyMemoryEntities = [
 	'organization',
@@ -37,6 +37,10 @@ function getPropertyMemoryPermissions() {
 
 async function seed() {
 	console.log('🌱 Seeding...')
+
+	const createPassword = (password: string) => ({
+		hash: bcrypt.hashSync(password, 10),
+	})
 
 	console.time('🧹 Cleaned up existing data...')
 	await prisma.mcpToolInvocation.deleteMany()
@@ -170,7 +174,6 @@ async function seed() {
 	console.time('👤 Created users...')
 	const ownerUser = await prisma.user.create({
 		data: {
-			...createUser(),
 			name: 'Daniel Owner',
 			email: 'owner@example.com',
 			username: 'owner',
@@ -180,7 +183,6 @@ async function seed() {
 
 	const managerUser = await prisma.user.create({
 		data: {
-			...createUser(),
 			name: 'Morgan Manager',
 			email: 'manager@example.com',
 			username: 'manager',
@@ -190,7 +192,6 @@ async function seed() {
 
 	const agentUser = await prisma.user.create({
 		data: {
-			...createUser(),
 			name: 'Alex Agent',
 			email: 'agent@example.com',
 			username: 'agent',
@@ -237,7 +238,9 @@ async function seed() {
 		entityId: string
 		after: Record<string, unknown>
 	}) {
-		const normalizedAfter = JSON.parse(JSON.stringify(after))
+		const normalizedAfter = JSON.parse(
+			JSON.stringify(after),
+		) as Prisma.InputJsonValue
 		await prisma.auditLog.create({
 			data: {
 				action: 'CREATE',
@@ -247,7 +250,7 @@ async function seed() {
 				actorId: auditContext.actorId,
 				actorType: auditContext.actorType,
 				actorLabel: auditContext.actorLabel,
-				before: null,
+				before: Prisma.DbNull,
 				after: normalizedAfter,
 			},
 		})
